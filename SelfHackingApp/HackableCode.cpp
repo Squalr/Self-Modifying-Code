@@ -1,10 +1,9 @@
-#include "pch.h"
 #include "HackableCode.h"
 
 HackableCode::HackableCode(void* codeStart, void* codeEnd)
 {
 	this->codePointer = (unsigned char*)codeStart;
-	this->codeOriginalLength = (int)codeEnd - (int)codeStart;
+	this->codeOriginalLength = (unsigned int)codeEnd - (unsigned int)codeStart;
 	this->allocations = new std::map<void*, int>();
 
 	this->originalCodeCopy = new unsigned char(this->codeOriginalLength);
@@ -24,9 +23,19 @@ bool HackableCode::applyCustomCode()
 {
 	CompileResult compileResult = this->assemble(this->assemblyString, this->codePointer);
 
-	// Sanity check that the code compiles -- there isn't any reason it shouldn't
-	if (compileResult.hasError || compileResult.byteCount > this->codeOriginalLength)
+	if (compileResult.hasError)
 	{
+		std::cout << "Line #" << compileResult.errorData.lineNumber << ":" << "\n";
+		std::cout << compileResult.errorData.message << "\n";
+
+		// Fail the activation
+		return false;
+	}
+
+	if (compileResult.byteCount > this->codeOriginalLength)
+	{
+		std::cout << "The new code is larger than the original! It doesn't fit." << "\n";
+
 		// Fail the activation
 		return false;
 	}

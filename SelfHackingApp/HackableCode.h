@@ -2,14 +2,22 @@
 #include "fasm.h"
 #include "udis86.h"
 
+#include <iostream>
 #include <string>
 #include <map>
 
-#define HACKABLE_CODE(address, label) \
+#define HACKABLE_CODE_BEGIN(address, label) \
 _asm \
 { \
 	_asm mov address, offset label \
 	_asm label: \
+}
+
+#define HACKABLE_CODE_END(address, label) \
+_asm \
+{ \
+	_asm label: \
+	_asm mov address, offset label \
 }
 
 class HackableCode
