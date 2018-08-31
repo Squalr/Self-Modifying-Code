@@ -4,7 +4,6 @@ HackableCode::HackableCode(void* codeStart, void* codeEnd)
 {
 	this->codePointer = (unsigned char*)codeStart;
 	this->codeOriginalLength = (unsigned int)codeEnd - (unsigned int)codeStart;
-	this->allocations = new std::map<void*, int>();
 
 	this->originalCodeCopy = new unsigned char(this->codeOriginalLength);
 	memcpy(originalCodeCopy, codeStart, this->codeOriginalLength);
@@ -55,23 +54,9 @@ bool HackableCode::applyCustomCode()
 	}
 }
 
-void* HackableCode::allocateMemory(int allocationSize)
-{
-	void* allocation = malloc(allocationSize);
-	this->allocations->insert_or_assign(allocation, allocationSize);
-
-	return allocation;
-}
-
 HackableCode::~HackableCode()
 {
-	for (auto iterator = this->allocations->begin(); iterator != this->allocations->end(); iterator++)
-	{
-		delete(iterator->first);
-	}
-
 	delete(this->originalCodeCopy);
-	delete(this->allocations);
 }
 
 

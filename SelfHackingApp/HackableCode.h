@@ -32,8 +32,6 @@ public:
 	bool applyCustomCode();
 
 private:
-	void* allocateMemory(int allocationSize);
-
 	struct CompileResult
 	{
 		struct ErrorData
@@ -56,5 +54,4 @@ private:
 	void* codePointer;
 	void* originalCodeCopy;
 	int codeOriginalLength;
-	std::map<void*, int>* allocations;
 };
