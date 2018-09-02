@@ -49,8 +49,8 @@ bool HackableCode::applyCustomCode()
 	// Fill remaining bytes with NOPs
 	for (int index = 0; index < unfilledBytes; index++)
 	{
-		const byte nop = 0x90;
-		((byte*)this->codePointer)[compileResult.byteCount + index] = nop;
+		const unsigned char nop = 0x90;
+		((unsigned char*)this->codePointer)[compileResult.byteCount + index] = nop;
 	}
 }
 
