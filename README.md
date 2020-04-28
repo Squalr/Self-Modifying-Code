@@ -10,19 +10,19 @@ Feel free to submit a pull request with a CMake solution that works on Linux/OSX
 NO_OPTIMIZE
 int hackableRoutineTakeDamage(int health, int damage)
 {
-	// This is the code we want to be hackable by the user
-	HACKABLE_CODE_BEGIN();
-	health -= damage;
-	HACKABLE_CODE_END();
+    // This is the code we want to be hackable by the user
+    HACKABLE_CODE_BEGIN();
+    health -= damage;
+    HACKABLE_CODE_END();
 
-	HACKABLES_STOP_SEARCH();
+    HACKABLES_STOP_SEARCH();
 
-	if (health < 0)
-	{
-		health = 0;
-	}
+    if (health < 0)
+    {
+        health = 0;
+    }
 
-	return health;
+    return health;
 }
 END_NO_OPTIMIZE
 ```
