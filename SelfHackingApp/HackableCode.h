@@ -99,10 +99,10 @@
 #endif
 
 // This is used to mark the beginning of an editable section of code
-// 56 6A * BE DE C0 ED FE 5E 5E
-#define HACKABLE_CODE_BEGIN(func_id) \
+// 56 6A 45 BE DE C0 ED FE 5E 5E
+#define HACKABLE_CODE_BEGIN() \
 	ASM(push ZDI) \
-	ASM(push func_id) \
+	ASM(push 69) \
 	ASM(mov edi, 0xFEEDC0DE) \
 	ASM(pop ZDI) \
 	ASM(pop ZDI)
@@ -168,11 +168,10 @@ private:
 		HackableCodeMarkers(void* start, void* end) : start(start), end(end) { }
 	};
 
-	typedef std::map<unsigned char, HackableCode::HackableCodeMarkers> MarkerMap;
-	typedef std::map<void*, MarkerMap> CodeMap;
+	typedef std::map<void*, std::vector<HackableCode::HackableCodeMarkers>> MarkerMap;
 
 	static std::vector<HackableCode*> parseHackables(void* functionStart);
-	static MarkerMap& parseHackableMarkers(void* functionStart);
+	static std::vector<HackableCode::HackableCodeMarkers>& parseHackableMarkers(void* functionStart);
 
 	std::string assemblyString;
 	std::string originalAssemblyString;
@@ -181,10 +180,8 @@ private:
 	std::vector<unsigned char> originalCodeCopy;
 	int originalCodeLength;
 
-	static CodeMap HackableCodeCache;
-	static const int StartTagFuncIdIndex;
+	static MarkerMap MarkerCache;
 	static const unsigned char StartTagSignature[];
 	static const unsigned char EndTagSignature[];
 	static const unsigned char StopSearchTagSignature[];
-	static std::map<std::string, std::vector<unsigned char>> OriginalCodeCache;
 };

@@ -4,14 +4,12 @@
 
 #include "HackUtils.h"
 
-HackableCode::CodeMap HackableCode::HackableCodeCache = HackableCode::CodeMap();
+HackableCode::MarkerMap HackableCode::MarkerCache = HackableCode::MarkerMap();
 
 // Note: all tags are assumed to start with a different byte and have the same length
-const int HackableCode::StartTagFuncIdIndex = 2;
-const unsigned char HackableCode::StartTagSignature[] = { 0x57, 0x6A, 0x00, 0xBF, 0xDE, 0xC0, 0xED, 0xFE, 0x5F, 0x5F };
+const unsigned char HackableCode::StartTagSignature[] = { 0x57, 0x6A, 0x45, 0xBF, 0xDE, 0xC0, 0xED, 0xFE, 0x5F, 0x5F };
 const unsigned char HackableCode::EndTagSignature[] = { 0x56, 0x6A, 0x45, 0xBE, 0xDE, 0xC0, 0xAD, 0xDE, 0x5E, 0x5E };
 const unsigned char HackableCode::StopSearchTagSignature[] = { 0x52, 0x6A, 0x45, 0xBA, 0x5E, 0xEA, 0x15, 0x0D, 0x5A, 0x5A };
-std::map<std::string, std::vector<unsigned char>> HackableCode::OriginalCodeCache = std::map<std::string, std::vector<unsigned char>>();
 
 std::vector<HackableCode*> HackableCode::create(void* functionStart)
 {
@@ -94,38 +92,33 @@ void HackableCode::restoreState()
 std::vector<HackableCode*> HackableCode::parseHackables(void* functionStart)
 {
 	// Parse the HACKABLE_CODE_BEGIN/END pairs from the function. There may be multiple.
-	MarkerMap markerMap = HackableCode::parseHackableMarkers(functionStart);
-
+	std::vector<HackableCode::HackableCodeMarkers> markerList = HackableCode::parseHackableMarkers(functionStart);
 	std::vector<HackableCode*> extractedHackableCode = std::vector<HackableCode*>();
 
 	// Bind the code info to each of the BEGIN/END markers to create a HackableCode object.
-	for (auto marker : markerMap)
+	for (auto marker : markerList)
 	{
-		unsigned char funcId = marker.first;
-		HackableCodeMarkers markers = marker.second;
-
-		extractedHackableCode.push_back(new HackableCode(markers.start, markers.end));
+		extractedHackableCode.push_back(new HackableCode(marker.start, marker.end));
 	}
 
 	return extractedHackableCode;
 }
 
-HackableCode::MarkerMap& HackableCode::parseHackableMarkers(void* functionStart)
+std::vector<HackableCode::HackableCodeMarkers>& HackableCode::parseHackableMarkers(void* functionStart)
 {
-	if (HackableCode::HackableCodeCache.find(functionStart) != HackableCode::HackableCodeCache.end())
+	if (HackableCode::MarkerCache.find(functionStart) != HackableCode::MarkerCache.end())
 	{
-		return HackableCode::HackableCodeCache[functionStart];
+		return HackableCode::MarkerCache[functionStart];
 	}
 
 	void* resolvedFunctionStart = HackUtils::resolveVTableAddress(functionStart);
-	MarkerMap extractedMarkers = MarkerMap();
+	std::vector<HackableCode::HackableCodeMarkers> extractedMarkers = std::vector<HackableCode::HackableCodeMarkers>();
 
 	const int tagSize = sizeof(HackableCode::StartTagSignature) / sizeof((HackableCode::StartTagSignature)[0]);
 	const int stopSearchingAfterXBytesFailSafe = 4096;
 
 	unsigned char* currentBase = (unsigned char*)resolvedFunctionStart;
 	unsigned char* currentSeek = (unsigned char*)resolvedFunctionStart;
-	unsigned char funcId = 0;
 	const unsigned char* targetArray = nullptr;
 	void* nextHackableCodeStart = nullptr;
 
@@ -165,14 +158,6 @@ HackableCode::MarkerMap& HackableCode::parseHackableMarkers(void* functionStart)
 			continue;
 		}
 
-		// Special case in the start tag where we embed a local identifier for the function, which we need to pull out
-		if (targetArray == HackableCode::StartTagSignature && signatureIndex == HackableCode::StartTagFuncIdIndex)
-		{
-			funcId = *currentSeek;
-			currentSeek++;
-			continue;
-		}
-
 		// Check if we match the next expected character
 		if (*currentSeek == targetArray[signatureIndex])
 		{
@@ -190,7 +175,7 @@ HackableCode::MarkerMap& HackableCode::parseHackableMarkers(void* functionStart)
 					{
 						void* nextHackableCodeEnd = (void*)currentBase;
 
-						extractedMarkers[funcId] = HackableCodeMarkers(nextHackableCodeStart, nextHackableCodeEnd);
+						extractedMarkers.push_back(HackableCodeMarkers(nextHackableCodeStart, nextHackableCodeEnd));
 
 						nextHackableCodeStart = nullptr;
 					}
@@ -213,7 +198,7 @@ HackableCode::MarkerMap& HackableCode::parseHackableMarkers(void* functionStart)
 		currentSeek = currentBase;
 	}
 
-	HackableCode::HackableCodeCache[functionStart] = extractedMarkers;
+	HackableCode::MarkerCache[functionStart] = extractedMarkers;
 
-	return HackableCode::HackableCodeCache[functionStart];
+	return HackableCode::MarkerCache[functionStart];
 }
